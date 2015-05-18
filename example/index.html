@@ -5,13 +5,52 @@
     <title></title>
 </head>
 <body ng-app="demo">
-
+<div ng-controller="TestCtrl">
+    {{messages}}
+    {{connected}}
+</div>
 <script src="../bower_components/angular/angular.min.js"></script>
 
 <script src="../bower_components/socket.io-client/dist/socket.io.js"></script>
 <script src="../bower_components/pomelo-jsclient-socket.io/lib/pomelo-client.js"></script>
 
 <script src="../angular-pomelo.js"></script>
-<script src="app.js"></script>
+<script>
+    angular.module('demo', ['angular-pomelo'])
+            .constant('pomeloConfig', {
+                gate: [{
+                    host: '127.0.0.1',
+                    port: 3014
+                }]
+            })
+            .run(function (pomelo, pomeloConfig, $rootScope) {
+                pomelo.initialize(pomeloConfig);
+                pomelo.queryEntry({uid: 'nemo'});
+            })
+            .controller('TestCtrl', function ($scope, $rootScope) {
+                $scope.messages = [];
+                $scope.testFn = function () {
+                    console.log('fire test fn');
+                };
+
+                pomelo.on('onMsg', function (msg) {
+                    $scope.messages.push(msg);
+                    $scope.$digest();
+                    $scope.testFn();
+                });
+
+                pomelo.on('disconnect', function (error) {
+                    console.log('disconnect');
+                    $scope.connected = false;
+                    $scope.$digest();
+                });
+
+                pomelo.on('connected', function (url) {
+                    console.log(url);
+                    $scope.connected = true;
+                    $scope.$digest();
+                })
+            })
+</script>
 </body>
 </html>
